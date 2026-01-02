@@ -1,0 +1,10 @@
+build/
+*.exe
+*.o
+*.a
+*.lib
+*.log
+.vscode/
+.DS_Store
+imgui.ini
+scene.json
