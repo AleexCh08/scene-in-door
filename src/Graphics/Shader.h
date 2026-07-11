@@ -28,15 +28,21 @@ R"(
     #version 330 core
     layout(location = 0) in vec3 aPos;
     layout(location = 1) in vec3 aNormal;
+    layout(location = 2) in vec2 aTexCoords;
+
     uniform mat4 model;
     uniform mat4 view;
     uniform mat4 projection;
+
     out vec3 FragPos;
     out vec3 Normal;
+    out vec2 TexCoords;
+
     void main() {
         FragPos = vec3(model * vec4(aPos, 1.0));
         Normal = mat3(transpose(inverse(model))) * aNormal;
-        gl_Position = projection * view * model * vec4(aPos, 1.0);
+        TexCoords = aTexCoords;
+        gl_Position = projection * view * vec4(FragPos, 1.0);
     }
 )";
 
@@ -56,9 +62,8 @@ R"(
     };
 
     struct Material {
-        vec3 ambient;
-        vec3 diffuse;
-        vec3 specular;
+        sampler2D texture_diffuse1;
+        sampler2D texture_specular1;
         float shininess;
     };
 
@@ -72,6 +77,7 @@ R"(
 
     in vec3 FragPos;
     in vec3 Normal;
+    in vec2 TexCoords;
 
     void main() {
         if (isLightSource) {
@@ -81,16 +87,18 @@ R"(
             vec3 viewDir = normalize(viewPos - FragPos);
             vec3 result = vec3(0.0);
 
+            // Muestrear las texturas 
+            vec3 diffuseTexColor = vec3(texture(material.texture_diffuse1, TexCoords));
+            vec3 specularTexColor = vec3(texture(material.texture_specular1, TexCoords));
+
             for(int i = 0; i < numLights; ++i) {
-                // Calcular dirección de la luz (puntual/direccional)
                 vec3 lightDir;
-                if (lights[i].w == 1.0) { // Luz puntual
+                if (lights[i].w == 1.0) { 
                     lightDir = normalize(lights[i].position - FragPos);
-                } else { // Luz direccional
+                } else { 
                     lightDir = normalize(-lights[i].position); 
                 }
 
-                // Calcular distancia y atenuación (solo para luces puntuales)
                 float attenuation = 1.0;
                 if (lights[i].w == 1.0) {
                     float distance = length(lights[i].position - FragPos);
@@ -99,28 +107,24 @@ R"(
                                         lights[i].attenuation.z * (distance * distance));
                 }
 
-                // Componente ambiental
-                vec3 ambient = lights[i].ambient * material.ambient;
+                vec3 ambient = lights[i].ambient * diffuseTexColor;
 
-                // Componente difusa (Lambert)
                 float diff = max(dot(norm, lightDir), 0.0);
-                vec3 diffuse = lights[i].diffuse * (diff * material.diffuse);
+                vec3 diffuse = lights[i].diffuse * diff * diffuseTexColor;
 
-                // Componente especular (Phong/Blinn-Phong)
                 vec3 specular = vec3(0.0);
                 if (lights[i].lightingType != 0 && diff > 0.0) {
                     if (lights[i].lightingType == 1) { // Phong
                         vec3 reflectDir = reflect(-lightDir, norm);
                         float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-                        specular = lights[i].specular * (spec * material.specular);
+                        specular = lights[i].specular * spec * specularTexColor;
                     } else if (lights[i].lightingType == 2) { // Blinn-Phong
                         vec3 halfwayDir = normalize(lightDir + viewDir);
                         float spec = pow(max(dot(norm, halfwayDir), 0.0), material.shininess);
-                        specular = lights[i].specular * (spec * material.specular);
+                        specular = lights[i].specular * spec * specularTexColor;
                     }
                 }
 
-                // Aplicar atenuación
                 ambient *= attenuation;
                 diffuse *= attenuation;
                 specular *= attenuation;
