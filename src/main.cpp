@@ -253,8 +253,8 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
             if (!keyXPressed && !keyYPressed && !keyZPressed && !scene->selectedModel->isLight) {
                 // Actualizar rotacion como quaternion
                 glm::quat rotY = glm::angleAxis(glm::radians(xoffset * speed * 50.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-                glm::quat rotX = glm::angleAxis(glm::radians(yoffset * speed * 50.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-                scene->selectedModel->rotation = rotY * rotX * scene->selectedModel->rotation;              
+                glm::quat rotX = glm::angleAxis(glm::radians(yoffset * speed * 50.0f), glm::vec3(1.0f, 0.0f, 0.0f)); 
+                scene->selectedModel->rotation = rotY * scene->selectedModel->rotation * rotX;             
             }
 
             if (scene->selectedModel && scene->selectedModel->isLight) {

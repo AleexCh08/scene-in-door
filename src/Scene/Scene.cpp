@@ -248,9 +248,12 @@ void Scene::DrawBoundingBox(const Model& model, const Camera& camera) {
     // Configurar shader
     bboxShader.Use();
     glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), model.position);
+    /*
     modelMatrix = glm::rotate(modelMatrix, glm::radians(model.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
     modelMatrix = glm::rotate(modelMatrix, glm::radians(model.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    modelMatrix = glm::rotate(modelMatrix, glm::radians(model.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+    modelMatrix = glm::rotate(modelMatrix, glm::radians(model.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));*/
+    glm::mat4 rotMatrix = glm::mat4_cast(model.rotation);
+    modelMatrix = modelMatrix * rotMatrix;
 
     glm::mat4 view = camera.GetViewMatrix();
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
