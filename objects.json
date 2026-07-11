@@ -2,75 +2,75 @@
   "models": [
     {
       "name": "objects/character-a.obj",
-      "position": [0.0, 0.0, 0.0]
+      "position": [-5.0, 0.0, -2.0]
     },
     {
       "name": "objects/character-b.obj",
-      "position": [1.5, 0.0, 0.0]
+      "position": [-3.0, 0.0, -2.0]
     },
     {
       "name": "objects/character-c.obj",
-      "position": [3.0, 0.0, 0.0]
+      "position": [-1.0, 0.0, -2.0]
     },
     {
       "name": "objects/character-d.obj",
-      "position": [4.5, 0.0, 0.0]
+      "position": [1.0, 0.0, -2.0]
     },
     {
       "name": "objects/character-e.obj",
-      "position": [6.0, 0.0, 0.0]
+      "position": [3.0, 0.0, -2.0]
     },
     {
       "name": "objects/character-f.obj",
-      "position": [7.5, 0.0, 0.0]
+      "position": [5.0, 0.0, -2.0]
     },
     {
       "name": "objects/character-g.obj",
-      "position": [9.0, 0.0, 0.0]
+      "position": [-5.0, 0.0, 0.0]
     },
     {
       "name": "objects/character-h.obj",
-      "position": [10.5, 0.0, 0.0]
+      "position": [-3.0, 0.0, 0.0]
     },
     {
       "name": "objects/character-i.obj",
-      "position": [12.0, 0.0, 0.0]
+      "position": [-1.0, 0.0, 0.0]
     },
     {
       "name": "objects/character-j.obj",
-      "position": [12.0, 0.0, 0.0]
+      "position": [1.0, 0.0, 0.0]
     },
     {
       "name": "objects/character-k.obj",
-      "position": [12.0, 0.0, 0.0]
+      "position": [3.0, 0.0, 0.0]
     },
     {
       "name": "objects/character-l.obj",
-      "position": [12.0, 0.0, 0.0]
+      "position": [5.0, 0.0, 0.0]
     },
     {
       "name": "objects/character-m.obj",
-      "position": [12.0, 0.0, 0.0]
+      "position": [-5.0, 0.0, 2.0]
     },
     {
       "name": "objects/character-n.obj",
-      "position": [12.0, 0.0, 0.0]
+      "position": [-3.0, 0.0, 2.0]
     },
     {
       "name": "objects/character-o.obj",
-      "position": [12.0, 0.0, 0.0]
+      "position": [-1.0, 0.0, 2.0]
     },
     {
       "name": "objects/character-p.obj",
-      "position": [12.0, 0.0, 0.0]
+      "position": [1.0, 0.0, 2.0]
     },
     {
       "name": "objects/character-q.obj",
-      "position": [12.0, 0.0, 0.0]
+      "position": [3.0, 0.0, 2.0]
     },
     {
       "name": "objects/character-r.obj",
-      "position": [12.0, 0.0, 0.0]
+      "position": [5.0, 0.0, 2.0]
     }
   ]
 }
