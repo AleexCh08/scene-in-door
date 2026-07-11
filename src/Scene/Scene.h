@@ -5,11 +5,13 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include "../Graphics/Model.h"
+#include "../Graphics/Skybox.h"
 
 class Scene {
 public:
     Scene();
     ~Scene();
+    Skybox skybox;
     void Render(Camera& camera);
     bool RayAABBIntersection(glm::vec3 rayStart, glm::vec3 rayDir, const Model& model, float& tNear, float& tFar);
     void SaveScene(const std::string& filename);
@@ -37,5 +39,4 @@ private:
     void CreateLightSphere();
     void RenderModel(const Model& model, bool isLight);
     void DrawBoundingBox(const Model& model, const Camera& camera);
-    void LoadRoom();
 };

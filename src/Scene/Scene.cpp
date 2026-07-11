@@ -8,7 +8,6 @@
 
 Scene::Scene() : shader(true), crosshairShader(crosshairVertexShader, crosshairFragmentShader), 
                     bboxShader(bboxVertexShader, bboxFragmentShader) {
-    LoadRoom(); // Cargar habitacion
     // Cargar modelos desde JSON
     std::ifstream file("objects.json");
     if (!file.is_open()) {
@@ -28,6 +27,17 @@ Scene::Scene() : shader(true), crosshairShader(crosshairVertexShader, crosshairF
         );
         models.push_back(model);
     }
+
+    // Crear skybox
+    std::vector<std::string> faces = {
+        "src/Textures/skybox/right.png",
+        "src/Textures/skybox/left.png",
+        "src/Textures/skybox/top.png",
+        "src/Textures/skybox/bottom.png",
+        "src/Textures/skybox/front.png",
+        "src/Textures/skybox/back.png"
+    };
+    skybox.Load(faces);
 
     CreateLightSphere();
 
@@ -107,6 +117,9 @@ void Scene::Render(Camera& camera)
     if (selectedModel) {
         DrawBoundingBox(*selectedModel, camera);
     }
+
+    // Renderizar skybox
+    skybox.Draw(camera.GetViewMatrix(), glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f));
 }
 
 void Scene::RenderModel(const Model& model, bool isLight) {   
@@ -265,16 +278,6 @@ void Scene::DrawBoundingBox(const Model& model, const Camera& camera) {
 
     glDrawArrays(GL_LINES, 0, 24);
     glBindVertexArray(0);
-}
-
-void Scene::LoadRoom() {
-    Model room("objects/room.obj"); // Assimp carga geometría y texturas automáticamente
-    room.isRoom = true;
-    room.position = glm::vec3(0.0f, -1.0f, 0.0f);
-    room.scale = glm::vec3(1.5f);
-    room.rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
-    room.materialShininess = 80.0f;
-    models.push_back(room);
 }
 
 void Scene::SaveScene(const std::string& filename) {
