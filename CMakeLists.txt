@@ -28,9 +28,10 @@ if(WIN32)
         user32
         kernel32
         shell32
+        assimp
     )
 else()
-    target_link_libraries(${PROJECT_NAME} PRIVATE ${GLFW_LIB} GL dl)
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${GLFW_LIB} GL dl assimp)
 endif()
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
