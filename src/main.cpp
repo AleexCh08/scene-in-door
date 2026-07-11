@@ -33,7 +33,11 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Scene In-Door", NULL, NULL);
+    /* Inicializar en pantalla completa 
+    GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
+    GLFWwindow* window = glfwCreateWindow(mode->width, mode->height, "Scene In-Door", primaryMonitor, NULL);*/
+    GLFWwindow* window = glfwCreateWindow(1024, 768, "Scene In-Door", NULL, NULL);
     if (!window) {
         std::cerr << "Error al crear la ventana GLFW" << std::endl;
         glfwTerminate();

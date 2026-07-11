@@ -104,6 +104,14 @@ void Scene::Render(Camera& camera)
         RenderModel(lightSpheres[i], true);
     }
 
+    // Dibujar Bounding Box del objeto seleccionado
+    if (selectedModel) {
+        DrawBoundingBox(*selectedModel, camera);
+    }
+
+    // Renderizar skybox
+    skybox.Draw(camera.GetViewMatrix(), glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f));
+
     // Renderizar mira
     glDisable(GL_DEPTH_TEST);
     crosshairShader.Use();
@@ -112,14 +120,6 @@ void Scene::Render(Camera& camera)
     glDrawArrays(GL_LINES, 0, 8);
     glBindVertexArray(0);
     glEnable(GL_DEPTH_TEST);
-
-    // Dibujar Bounding Box del objeto seleccionado
-    if (selectedModel) {
-        DrawBoundingBox(*selectedModel, camera);
-    }
-
-    // Renderizar skybox
-    skybox.Draw(camera.GetViewMatrix(), glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f));
 }
 
 void Scene::RenderModel(const Model& model, bool isLight) {   
@@ -261,10 +261,6 @@ void Scene::DrawBoundingBox(const Model& model, const Camera& camera) {
     // Configurar shader
     bboxShader.Use();
     glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), model.position);
-    /*
-    modelMatrix = glm::rotate(modelMatrix, glm::radians(model.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-    modelMatrix = glm::rotate(modelMatrix, glm::radians(model.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    modelMatrix = glm::rotate(modelMatrix, glm::radians(model.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));*/
     glm::mat4 rotMatrix = glm::mat4_cast(model.rotation);
     modelMatrix = modelMatrix * rotMatrix;
 
@@ -327,7 +323,6 @@ void Scene::LoadScene(const std::string& filename) {
     models.erase(std::remove_if(models.begin(), models.end(), [](const Model& m) { return !m.isRoom; }), models.end());
 
     activeLights = 0;
-    // IMPORTANTE: Ya no reiniciamos lightSpheres enteros para no perder la malla generada en memoria
 
     for (const auto& modelJson : jsonData["models"]) {
         if (modelJson.contains("isLight") && modelJson["isLight"].get<bool>()) {
