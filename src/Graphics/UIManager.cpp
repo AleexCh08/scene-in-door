@@ -181,12 +181,26 @@ void UIManager::Render(Scene* scene) {
         ImVec2 buttonSize(160, 35);
         
         if (ImGui::Button("Guardar Escena", buttonSize)) {
-            if (scene) scene->SaveScene("scene.json");
+            if (scene) {
+                scene->SaveScene("scene.json");
+                ShowNotification("Escena guardada exitosamente");
+            }
         }
         ImGui::Spacing();
         
         if (ImGui::Button("Cargar Escena", buttonSize)) {
-            if (scene) scene->LoadScene("scene.json");
+            if (scene) {
+                scene->selectedModel = nullptr; 
+                
+                scene->LoadScene("scene.json");
+                ShowNotification("Escena cargada exitosamente");
+
+                ImGui::End();
+                ImGui::PopStyleVar();
+                ImGui::Render();
+                ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+                return;
+            }
         }
         
         ImGui::Spacing();
@@ -207,6 +221,26 @@ void UIManager::Render(Scene* scene) {
         ImGui::PopStyleVar();
     }
 
+    if (notificationTimer > 0.0f) {
+        ImGuiIO& io = ImGui::GetIO();
+        notificationTimer -= io.DeltaTime; // Reducir tiempo en base a los FPS
+
+        ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y - 50.0f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+        
+        // Darle un estilo verde oscuro translucido y sin bordes
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15.0f, 10.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 8.0f);
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.15f, 0.60f, 0.25f, 0.85f)); 
+        
+        // Flags para que no tenga titulo, no se pueda mover y no quite el foco
+        ImGui::Begin("Notificacion", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav);
+        ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "%s", notificationMessage.c_str());
+        ImGui::End();
+
+        ImGui::PopStyleColor();
+        ImGui::PopStyleVar(2);
+    }
+
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
@@ -215,4 +249,9 @@ void UIManager::Shutdown() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+}
+
+void UIManager::ShowNotification(const std::string& message) {
+    notificationMessage = message;
+    notificationTimer = 3.0f; // La notificacion durara 3 segundos en pantalla
 }
