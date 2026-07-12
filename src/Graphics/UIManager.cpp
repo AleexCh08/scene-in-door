@@ -7,7 +7,35 @@ void UIManager::Init(GLFWwindow* window) {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
+
+    // Estilo visual moderno y profesional
     ImGui::StyleColorsDark();
+    ImGuiStyle& style = ImGui::GetStyle();
+    
+    // Redondeo de bordes
+    style.WindowRounding = 8.0f;
+    style.FrameRounding = 6.0f;
+    style.GrabRounding = 6.0f;
+    style.PopupRounding = 6.0f;
+    style.ScrollbarRounding = 6.0f;
+    
+    // Espaciado y alineacion
+    style.FramePadding = ImVec2(8, 4);
+    style.ItemSpacing = ImVec2(8, 6);
+    style.WindowTitleAlign = ImVec2(0.5f, 0.5f); // Centrar el titulo de la ventana
+
+    // Paleta de colores (Tonos oscuros con acentos azules/grises)
+    style.Colors[ImGuiCol_WindowBg] = ImVec4(0.12f, 0.12f, 0.13f, 0.95f);
+    style.Colors[ImGuiCol_FrameBg] = ImVec4(0.20f, 0.21f, 0.22f, 1.00f);
+    style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(0.25f, 0.26f, 0.27f, 1.00f);
+    style.Colors[ImGuiCol_FrameBgActive] = ImVec4(0.30f, 0.31f, 0.32f, 1.00f);
+    style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.15f, 0.16f, 0.17f, 1.00f);
+    style.Colors[ImGuiCol_Button] = ImVec4(0.22f, 0.33f, 0.55f, 1.00f);
+    style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.28f, 0.39f, 0.61f, 1.00f);
+    style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.35f, 0.45f, 0.65f, 1.00f);
+    style.Colors[ImGuiCol_Header] = ImVec4(0.22f, 0.25f, 0.30f, 1.00f);
+    style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.28f, 0.32f, 0.38f, 1.00f);
+    style.Colors[ImGuiCol_HeaderActive] = ImVec4(0.35f, 0.40f, 0.45f, 1.00f);
     
     // Inicializar los backends de ImGui
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -21,12 +49,10 @@ void UIManager::NewFrame() {
 }
 
 void UIManager::Render(Scene* scene) {
-    // Heurística 8: Diseño estético y minimalista. Solo mostramos la UI si hay selección.
     if (scene && scene->selectedModel) {
-        ImGui::SetNextWindowSize(ImVec2(350, 0), ImGuiCond_Always);
-        ImGui::Begin("Inspector de Propiedades", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
+        // AlwaysAutoResize acopla la ventana exactamente al tamaño de sus elementos
+        ImGui::Begin("Inspector de Propiedades", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize);
 
-        // Heurística 1: Visibilidad del estado del sistema
         ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.4f, 1.0f), "Seleccion actual:");
         if (scene->selectedModel->isLight) {
             int lightIndex = -1;
@@ -42,12 +68,11 @@ void UIManager::Render(Scene* scene) {
         }
         ImGui::Spacing();
 
-        // Heurística 3: Control y libertad del usuario (Salida clara)
-        if (ImGui::Button("Deseleccionar", ImVec2(-1, 30))) {
+        // Boton con tamaño ajustado a su etiqueta
+        if (ImGui::Button(" Deseleccionar ")) {
             scene->selectedModel = nullptr;
             ImGui::End();
             
-            // ImGui requiere terminar el ciclo de renderizado aunque cerremos la ventana
             ImGui::Render();
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
             return; 
@@ -56,10 +81,10 @@ void UIManager::Render(Scene* scene) {
         ImGui::Separator();
         ImGui::Spacing();
 
-        // Heurística 4: Consistencia y estándares (Agrupación lógica)
         if (ImGui::CollapsingHeader("Transformaciones", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::Indent(10.0f); // Sangria para mejorar la estructura
             ImGui::DragFloat3("Posicion", &scene->selectedModel->position[0], 0.05f);
-            // Las luces no se escalan ni rotan
+            
             if (!scene->selectedModel->isLight) {
                 ImGui::DragFloat3("Escala", &scene->selectedModel->scale[0], 0.05f);
                 
@@ -72,41 +97,45 @@ void UIManager::Render(Scene* scene) {
             if (ImGui::IsItemEdited() || ImGui::IsItemActive()) {
                 scene->selectedModel->CalculateAABB();
             }
+            ImGui::Unindent(10.0f);
         }
 
         if (scene->selectedModel->isLight) {
             if (ImGui::CollapsingHeader("Propiedades de Luz", ImGuiTreeNodeFlags_DefaultOpen)) {
-                
-                ImGui::Text("Modelo de Iluminacion:");
+                ImGui::Indent(10.0f);
+                ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Modelo de Iluminacion:");
                 ImGui::RadioButton("Lambert", &scene->selectedModel->lightingType, 0); ImGui::SameLine();
                 ImGui::RadioButton("Phong", &scene->selectedModel->lightingType, 1); ImGui::SameLine();
                 ImGui::RadioButton("Blinn-Phong", &scene->selectedModel->lightingType, 2);
 
                 ImGui::Spacing();
-                ImGui::Text("Tipo de Luz:");
+                ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Tipo de Luz:");
                 bool isPointLight = (scene->selectedModel->w == 1.0f);
                 if (ImGui::Checkbox("Luz Puntual", &isPointLight)) {
                     scene->selectedModel->w = isPointLight ? 1.0f : 0.0f;
                 }
                 
                 ImGui::Separator();
+                ImGui::Spacing();
                 ImGui::ColorEdit3("Luz Difusa", &scene->selectedModel->lightDiffuse[0]);
                 ImGui::ColorEdit3("Luz Especular", &scene->selectedModel->lightSpecular[0]);
                 
-                // La atenuacion solo es relevante si la luz es puntual
                 if (isPointLight) {
                     ImGui::DragFloat3("Atenuacion", &scene->selectedModel->attenuation[0], 0.01f, 0.0f, 10.0f);
                 }
+                ImGui::Unindent(10.0f);
             }
             
             ImGui::Separator();
             ImGui::Spacing();
             
             if (ImGui::CollapsingHeader("Gestor de Escena", ImGuiTreeNodeFlags_DefaultOpen)) {
-                ImGui::Text("Luces Activas: %d / 10", scene->activeLights);
+                ImGui::Indent(10.0f);
+                ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.8f, 1.0f), "Luces Activas: %d / 10", scene->activeLights);
+                ImGui::Spacing();
                 
                 if (scene->activeLights < 10) {
-                    if (ImGui::Button("Añadir Luz")) {
+                    if (ImGui::Button(" Añadir Luz ")) {
                         int prevLights = scene->activeLights;
                         scene->activeLights++;
                         scene->lightSpheres[prevLights] = scene->lightSpheres[0]; 
@@ -116,8 +145,8 @@ void UIManager::Render(Scene* scene) {
                 }
                 
                 if (scene->activeLights > 1) {
-                    ImGui::SameLine();
-                    if (ImGui::Button("Quitar Luz")) {
+                    if (scene->activeLights < 10) ImGui::SameLine(); 
+                    if (ImGui::Button(" Quitar Luz ")) {
                         if (scene->selectedModel == &scene->lightSpheres[scene->activeLights - 1]) {
                             scene->selectedModel = nullptr;
                             scene->activeLights--;
@@ -130,6 +159,7 @@ void UIManager::Render(Scene* scene) {
                         }
                     }
                 }
+                ImGui::Unindent(10.0f);
             }
         }
 
