@@ -82,21 +82,26 @@ void UIManager::Render(Scene* scene) {
         ImGui::Spacing();
 
         if (ImGui::CollapsingHeader("Transformaciones", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::Indent(10.0f); // Sangria para mejorar la estructura
-            ImGui::DragFloat3("Posicion", &scene->selectedModel->position[0], 0.05f);
+            ImGui::Indent(10.0f); 
+            bool transformChanged = false;
+            
+            if (ImGui::DragFloat3("Posicion", &scene->selectedModel->position[0], 0.05f)) transformChanged = true;
             
             if (!scene->selectedModel->isLight) {
-                ImGui::DragFloat3("Escala", &scene->selectedModel->scale[0], 0.05f);
+                if (ImGui::DragFloat3("Escala", &scene->selectedModel->scale[0], 0.05f)) transformChanged = true;
                 
                 glm::vec3 eulerRotation = glm::degrees(glm::eulerAngles(scene->selectedModel->rotation));
                 if (ImGui::DragFloat3("Rotacion", &eulerRotation[0], 1.0f)) {
                     scene->selectedModel->rotation = glm::quat(glm::radians(eulerRotation));
+                    transformChanged = true;
                 }
             }
             
-            if (ImGui::IsItemEdited() || ImGui::IsItemActive()) {
+            // Si hubo cambio en posicion, escala o rotacion, recalculamos el Bounding Box
+            if (transformChanged) {
                 scene->selectedModel->CalculateAABB();
             }
+            
             ImGui::Unindent(10.0f);
         }
 
@@ -162,8 +167,44 @@ void UIManager::Render(Scene* scene) {
                 ImGui::Unindent(10.0f);
             }
         }
-
+        
         ImGui::End();
+
+        ImGuiIO& io = ImGui::GetIO();
+        ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 10.0f, 10.0f), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
+        
+        // Aumentamos el margen interno para que no se vea aplastada
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15.0f, 15.0f));
+        ImGui::Begin("Menu Global", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
+        
+        // Asignamos un tamaño fijo a los botones (Ancho, Alto) para forzar el tamaño de la ventana
+        ImVec2 buttonSize(160, 35);
+        
+        if (ImGui::Button("Guardar Escena", buttonSize)) {
+            if (scene) scene->SaveScene("scene.json");
+        }
+        ImGui::Spacing();
+        
+        if (ImGui::Button("Cargar Escena", buttonSize)) {
+            if (scene) scene->LoadScene("scene.json");
+        }
+        
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+        
+        // Coloreamos el boton de salir de rojo para diferenciarlo y darle un toque profesional
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.2f, 0.2f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.3f, 0.3f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.9f, 0.4f, 0.4f, 1.0f));
+        
+        if (ImGui::Button("Salir del Programa", buttonSize)) {
+            glfwSetWindowShouldClose(glfwGetCurrentContext(), true);
+        }
+        
+        ImGui::PopStyleColor(3);
+        ImGui::End();
+        ImGui::PopStyleVar();
     }
 
     ImGui::Render();
