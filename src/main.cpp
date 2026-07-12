@@ -5,6 +5,7 @@
 #include "Core/Camera.h"
 #include "Scene/Scene.h"
 #include "Graphics/UIManager.h"
+#include <imgui.h>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window, float deltaTime);
@@ -67,8 +68,19 @@ int main() {
       
     float deltaTime = 0.0f;
     float lastFrame = 0.0f;
+    bool wasSelected = false;
 
     while (!glfwWindowShouldClose(window)) {
+        bool isSelected = (scene.selectedModel != nullptr);
+        if (isSelected && !wasSelected) {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            firstMouse = true; // Resetear al entrar a la UI
+        } else if (!isSelected && wasSelected) {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            firstMouse = true; // Resetear al salir de la UI
+        }
+        wasSelected = isSelected;
+
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
@@ -135,7 +147,8 @@ void processInput(GLFWwindow* window, float deltaTime) {
     }
   
     static bool prevClickState = false;
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS && !prevClickState) {
+    bool isLeftClicked = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+    if (isLeftClicked && !prevClickState && !ImGui::GetIO().WantCaptureMouse) {
         glm::vec3 rayStart = camera.Position;
         glm::vec3 rayDir = glm::normalize(camera.Front); 
 
@@ -223,6 +236,12 @@ void processInput(GLFWwindow* window, float deltaTime) {
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+    if (ImGui::GetIO().WantCaptureMouse) {
+        lastX = xpos;
+        lastY = ypos;
+        return;
+    }
+
     if (firstMouse) {
         lastX = xpos;
         lastY = ypos;
@@ -293,7 +312,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
             }
         }     
     }
-    else {
+    else if (scene->selectedModel == nullptr) {
         camera.ProcessMouseMovement(xoffset, yoffset);
-    }  
+    } 
 }
