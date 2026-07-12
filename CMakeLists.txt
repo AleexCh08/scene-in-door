@@ -18,6 +18,7 @@ file(GLOB_RECURSE SOURCES
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})
+target_link_options(${PROJECT_NAME} PRIVATE "-mwindows")
 find_library(GLFW_LIB NAMES glfw3 PATHS ${LIB_DIR} NO_DEFAULT_PATH)
 
 if(WIN32)
