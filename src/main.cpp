@@ -4,6 +4,7 @@
 #include <algorithm>
 #include "Core/Camera.h"
 #include "Scene/Scene.h"
+#include "Graphics/UIManager.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window, float deltaTime);
@@ -60,6 +61,9 @@ int main() {
 
     Scene scene;
     glfwSetWindowUserPointer(window, &scene);
+
+    UIManager uiManager;
+    uiManager.Init(window);
       
     float deltaTime = 0.0f;
     float lastFrame = 0.0f;
@@ -70,16 +74,19 @@ int main() {
         lastFrame = currentFrame;
 
         processInput(window, deltaTime);
+        uiManager.NewFrame();
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         scene.Render(camera);
+        uiManager.Render(&scene);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
+    uiManager.Shutdown();
     glfwDestroyWindow(window);
     glfwTerminate();
     return 0;

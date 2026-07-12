@@ -10,6 +10,7 @@ set(LIB_DIR ${CMAKE_SOURCE_DIR}/lib)
 set(SRC_DIR ${CMAKE_SOURCE_DIR}/src)
 
 include_directories(${INCLUDE_DIR})
+include_directories(${SRC_DIR}/imgui)
 
 file(GLOB_RECURSE SOURCES 
     "${SRC_DIR}/*.cpp"
