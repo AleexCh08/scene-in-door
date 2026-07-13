@@ -13,6 +13,15 @@ public:
     ~Scene();
     Skybox skybox;
     void Render(Camera& camera);
+
+    Shader pickingShader;
+    unsigned int pickingFBO;
+    unsigned int pickingTexture;
+    unsigned int pickingDepth;
+    
+    void InitPickingFBO(int width, int height);
+    void RenderPickingPass(Camera& camera);
+
     bool RayAABBIntersection(glm::vec3 rayStart, glm::vec3 rayDir, const Model& model, float& tNear, float& tFar);
     void SaveScene(const std::string& filename);
     void LoadScene(const std::string& filename);

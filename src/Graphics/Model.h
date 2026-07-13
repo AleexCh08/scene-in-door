@@ -21,7 +21,9 @@ public:
     // Propiedades originales de estado y transformación
     bool isSelected = false;
     bool isLight = false;
-    bool isRoom = false;
+    int pickingID;
+    glm::vec3 pickingColor;
+
     std::string name;
     glm::vec3 position{ 0.0f };
     glm::vec3 scale = glm::vec3(1.0f);
@@ -46,6 +48,14 @@ public:
     
     void Draw(const Shader &shader) const;
     void CalculateAABB(); 
+
+    void SetPickingID(int id) {
+        pickingID = id;
+        int r = (id & 0x000000FF) >>  0;
+        int g = (id & 0x0000FF00) >>  8;
+        int b = (id & 0x00FF0000) >> 16;
+        pickingColor = glm::vec3(r / 255.0f, g / 255.0f, b / 255.0f);
+    }
 
 private:
     void loadModel(const std::string &path);
