@@ -5,6 +5,7 @@
 #include "Core/Camera.h"
 #include "Scene/Scene.h"
 #include "Graphics/UIManager.h"
+#include "Utils/tinyfiledialogs.h"
 #include <imgui.h>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -23,6 +24,9 @@ bool keyUPressed = false, keyIPressed = false, keyOPressed = false;
 bool keyPPressed = false;
 bool isRightMousePressed = false;
 float lastMouseY = 0.0f;
+bool isCursorFree = false;
+bool keyPTogglePressed = false;
+bool keyCtrlOPressed = false;
 
 int main() {
     if (!glfwInit()) {
@@ -71,15 +75,16 @@ int main() {
     bool wasSelected = false;
 
     while (!glfwWindowShouldClose(window)) {
-        bool isSelected = (scene.selectedModel != nullptr);
-        if (isSelected && !wasSelected) {
+        bool shouldShowCursor = (scene.selectedModel != nullptr) || isCursorFree;
+        
+        if (shouldShowCursor && !wasSelected) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             firstMouse = true; 
-        } else if (!isSelected && wasSelected) {
+        } else if (!shouldShowCursor && wasSelected) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             firstMouse = true;
         }
-        wasSelected = isSelected;
+        wasSelected = shouldShowCursor;
 
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
@@ -119,7 +124,37 @@ void processInput(GLFWwindow* window, float deltaTime) {
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) camera.ProcessKeyboard(4, deltaTime); 
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) camera.ProcessKeyboard(5, deltaTime); 
   
-    Scene* scene = static_cast<Scene*>(glfwGetWindowUserPointer(window));   
+    Scene* scene = static_cast<Scene*>(glfwGetWindowUserPointer(window));  
+    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS && !keyPTogglePressed) {
+        if (scene->selectedModel == nullptr) {
+            isCursorFree = !isCursorFree;
+        }
+        keyPTogglePressed = true;
+    } else if (glfwGetKey(window, GLFW_KEY_P) == GLFW_RELEASE) {
+        keyPTogglePressed = false;
+    }
+
+    bool isCtrlPressed = glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS || 
+                         glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
+                         
+    if (isCtrlPressed && glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS && !keyCtrlOPressed) {
+        const char* filterPatterns[1] = { "*.obj" };
+        const char* filepath = tinyfd_openFileDialog("Importar Modelo 3D", "", 2, filterPatterns, "Modelos 3D", 0);
+        
+        if (filepath) {
+            int maxID = 10;
+            for (const auto& m : scene->models) {
+                if (m.pickingID > maxID) maxID = m.pickingID;
+            }
+            
+            scene->models.emplace_back(filepath);
+            scene->models.back().SetPickingID(maxID + 1);
+        }
+        keyCtrlOPressed = true;
+    } else if (glfwGetKey(window, GLFW_KEY_O) == GLFW_RELEASE) {
+        keyCtrlOPressed = false;
+    }
+    
     if (scene->selectedModel && scene->selectedModel->isLight) {
         if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) scene->selectedModel->lightingType = 0; 
         if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) scene->selectedModel->lightingType = 1; 
@@ -306,7 +341,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
             }
         }     
     }
-    else if (scene->selectedModel == nullptr) {
+    else if (scene->selectedModel == nullptr && !isCursorFree) {
         camera.ProcessMouseMovement(xoffset, yoffset);
     } 
 }

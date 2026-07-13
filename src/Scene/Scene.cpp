@@ -29,6 +29,7 @@ const char* pickingFragmentShader = R"(
 
 Scene::Scene() : shader(true), crosshairShader(crosshairVertexShader, crosshairFragmentShader), 
                     bboxShader(bboxVertexShader, bboxFragmentShader) {
+    models.reserve(100);
 
     // Crear skybox
     std::vector<std::string> faces = {

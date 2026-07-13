@@ -2,6 +2,7 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+#include <filesystem>
 #include "../Utils/tinyfiledialogs.h"
 
 void UIManager::Init(GLFWwindow* window) {
@@ -65,7 +66,8 @@ void UIManager::Render(Scene* scene) {
             }
             ImGui::TextWrapped("Luz %d", lightIndex);
         } else {
-            ImGui::TextWrapped("%s", scene->selectedModel->name.c_str());
+            std::string cleanName = std::filesystem::path(scene->selectedModel->name).stem().string();
+            ImGui::TextWrapped("%s", cleanName.c_str());
         }
         ImGui::Spacing();
 
@@ -169,91 +171,90 @@ void UIManager::Render(Scene* scene) {
             }
         }
         
-        ImGui::End();
+        ImGui::End();       
+    }
 
-        ImGuiIO& io = ImGui::GetIO();
-        ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 10.0f, 10.0f), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
-        
-        // Aumentamos el margen interno para que no se vea aplastada
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15.0f, 15.0f));
-        ImGui::Begin("Menu Global", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
-        
-        // Asignamos un tamaño fijo a los botones (Ancho, Alto) para forzar el tamaño de la ventana
-        ImVec2 buttonSize(160, 35);
+    ImGuiIO& io = ImGui::GetIO();
+    ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 10.0f, 10.0f), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
+    
+    // Aumentamos el margen interno para que no se vea aplastada
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15.0f, 15.0f));
+    ImGui::Begin("Menu Global", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
+    
+    // Asignamos un tamaño fijo a los botones (Ancho, Alto) para forzar el tamaño de la ventana
+    ImVec2 buttonSize(160, 35);
 
-        if (ImGui::Button("Importar Modelo 3D", buttonSize)) {
-            if (scene) {
-                const char* filterPatterns[2] = { "*.obj" };
-                const char* filepath = tinyfd_openFileDialog("Importar Modelo 3D", "", 2, filterPatterns, "Modelos 3D", 0);
-                
-                if (filepath) {
-                    Model newModel(filepath);                 
-                    // Calcular el siguiente ID disponible para el Color Picking
-                    int maxID = 10; // Las luces ocupan del 1 al 10
+    if (ImGui::Button("Importar Modelo 3D", buttonSize)) {
+        if (scene) {
+            const char* filterPatterns[1] = { "*.obj" };
+            const char* filepath = tinyfd_openFileDialog("Importar Modelo 3D", NULL, 2, filterPatterns, "Modelos 3D", 0);
+            
+            if (filepath) {
+                    int maxID = 10;
                     for (const auto& m : scene->models) {
                         if (m.pickingID > maxID) maxID = m.pickingID;
                     }
-                    newModel.SetPickingID(maxID + 1);
                     
-                    scene->models.push_back(newModel);
+                    scene->models.emplace_back(filepath);
+                    scene->models.back().SetPickingID(maxID + 1);
+                    
                     ShowNotification("Modelo importado exitosamente");
                 }
-            }
         }
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
-        
-        if (ImGui::Button("Guardar Escena", buttonSize)) {
-            if (scene) {
-                const char* filterPatterns[1] = { "*.json" };
-                const char* filepath = tinyfd_saveFileDialog("Guardar Escena", "scene.json", 1, filterPatterns, "Archivos JSON");
-                
-                if (filepath) { 
-                    scene->SaveScene(filepath);
-                    ShowNotification("Escena guardada exitosamente");
-                }
-            }
-        }
-        ImGui::Spacing();
-        
-        if (ImGui::Button("Cargar Escena", buttonSize)) {
-            if (scene) {
-                const char* filterPatterns[1] = { "*.json" };
-                const char* filepath = tinyfd_openFileDialog("Cargar Escena", "", 1, filterPatterns, "Archivos JSON", 0);
-                
-                if (filepath) {
-                    scene->selectedModel = nullptr; 
-                    
-                    scene->LoadScene(filepath);
-                    ShowNotification("Escena cargada exitosamente");
-
-                    ImGui::End();
-                    ImGui::PopStyleVar();
-                    ImGui::Render();
-                    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-                    return;
-                }
-            }
-        }
-        
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
-        
-        // Coloreamos el boton de salir de rojo para diferenciarlo y darle un toque profesional
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.2f, 0.2f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.3f, 0.3f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.9f, 0.4f, 0.4f, 1.0f));
-        
-        if (ImGui::Button("Salir del Programa", buttonSize)) {
-            glfwSetWindowShouldClose(glfwGetCurrentContext(), true);
-        }
-        
-        ImGui::PopStyleColor(3);
-        ImGui::End();
-        ImGui::PopStyleVar();
     }
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+    
+    if (ImGui::Button("Guardar Escena", buttonSize)) {
+        if (scene) {
+            const char* filterPatterns[1] = { "*.json" };
+            const char* filepath = tinyfd_saveFileDialog("Guardar Escena", "scene.json", 1, filterPatterns, "Archivos JSON");
+            
+            if (filepath) { 
+                scene->SaveScene(filepath);
+                ShowNotification("Escena guardada exitosamente");
+            }
+        }
+    }
+    ImGui::Spacing();
+    
+    if (ImGui::Button("Cargar Escena", buttonSize)) {
+        if (scene) {
+            const char* filterPatterns[1] = { "*.json" };
+            const char* filepath = tinyfd_openFileDialog("Cargar Escena", "", 1, filterPatterns, "Archivos JSON", 0);
+            
+            if (filepath) {
+                scene->selectedModel = nullptr; 
+                
+                scene->LoadScene(filepath);
+                ShowNotification("Escena cargada exitosamente");
+
+                ImGui::End();
+                ImGui::PopStyleVar();
+                ImGui::Render();
+                ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+                return;
+            }
+        }
+    }
+    
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+    
+    // Coloreamos el boton de salir de rojo para diferenciarlo y darle un toque profesional
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.2f, 0.2f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.3f, 0.3f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.9f, 0.4f, 0.4f, 1.0f));
+    
+    if (ImGui::Button("Salir del Programa", buttonSize)) {
+        glfwSetWindowShouldClose(glfwGetCurrentContext(), true);
+    }
+    
+    ImGui::PopStyleColor(3);
+    ImGui::End();
+    ImGui::PopStyleVar();
 
     if (notificationTimer > 0.0f) {
         ImGuiIO& io = ImGui::GetIO();
