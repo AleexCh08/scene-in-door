@@ -5,6 +5,8 @@
 #include <filesystem>
 #include "../Utils/tinyfiledialogs.h"
 
+extern Camera camera;
+
 void UIManager::Init(GLFWwindow* window) {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -290,7 +292,7 @@ void UIManager::Render(Scene* scene) {
             const char* filepath = tinyfd_saveFileDialog("Guardar Escena", "scene.json", 1, filterPatterns, "Archivos JSON");
             
             if (filepath) { 
-                scene->SaveScene(filepath);
+                scene->SaveScene(filepath, camera);
                 ShowNotification("Escena guardada exitosamente");
             }
         }
@@ -305,7 +307,7 @@ void UIManager::Render(Scene* scene) {
             if (filepath) {
                 scene->selectedModel = nullptr; 
                 
-                scene->LoadScene(filepath);
+                scene->LoadScene(filepath, camera);
                 ShowNotification("Escena cargada exitosamente");
 
                 ImGui::End();

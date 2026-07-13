@@ -295,8 +295,10 @@ void Scene::DrawBoundingBox(const Model& model, const Camera& camera) {
     glBindVertexArray(0);
 }
 
-void Scene::SaveScene(const std::string& filename) {
+void Scene::SaveScene(const std::string& filename, Camera& camera) {
     nlohmann::json jsonData;
+
+    jsonData["camera"]["position"] = { camera.Position.x, camera.Position.y, camera.Position.z };
 
     for (const auto& model : models) {
         nlohmann::json modelJson;
@@ -330,12 +332,20 @@ void Scene::SaveScene(const std::string& filename) {
     }
 }
 
-void Scene::LoadScene(const std::string& filename) {
+void Scene::LoadScene(const std::string& filename, Camera& camera) {
     std::ifstream file(filename);
     if (!file.is_open()) return;
 
     nlohmann::json jsonData;
     file >> jsonData;
+
+    if (jsonData.contains("camera")) {
+        camera.Position = glm::vec3(
+            jsonData["camera"]["position"][0].get<float>(),
+            jsonData["camera"]["position"][1].get<float>(),
+            jsonData["camera"]["position"][2].get<float>()
+        );
+    }
 
     models.clear();
 

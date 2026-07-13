@@ -23,8 +23,8 @@ public:
     void RenderPickingPass(Camera& camera);
 
     bool RayAABBIntersection(glm::vec3 rayStart, glm::vec3 rayDir, const Model& model, float& tNear, float& tFar);
-    void SaveScene(const std::string& filename);
-    void LoadScene(const std::string& filename);
+    void SaveScene(const std::string& filename, Camera& camera);
+    void LoadScene(const std::string& filename, Camera& camera);
    
     glm::vec3 lightPosition{ 0.0f };
     glm::vec3 lightAmbient = glm::vec3(0.2f, 0.2f, 0.2f); // Luz ambiental (La) definida
