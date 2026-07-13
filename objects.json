@@ -71,6 +71,10 @@
     {
       "name": "objects/character-r.obj",
       "position": [5.0, 0.0, 2.0]
+    },
+    {
+      "name": "objects/gunung_padang.obj",
+      "position": [0.0, -5.0, 0.0]
     }
   ]
 }

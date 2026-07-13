@@ -6,6 +6,27 @@
 #include <sstream>
 #include <nlohmann/json.hpp>
 
+// Shaders de picking definidos en memoria
+const char* pickingVertexShader = R"(
+    #version 330 core
+    layout (location = 0) in vec3 aPos;
+    uniform mat4 model;
+    uniform mat4 view;
+    uniform mat4 projection;
+    void main() {
+        gl_Position = projection * view * model * vec4(aPos, 1.0);
+    }
+)";
+
+const char* pickingFragmentShader = R"(
+    #version 330 core
+    out vec4 FragColor;
+    uniform vec3 pickingColor;
+    void main() {
+        FragColor = vec4(pickingColor, 1.0);
+    }
+)";
+
 Scene::Scene() : shader(true), crosshairShader(crosshairVertexShader, crosshairFragmentShader), 
                     bboxShader(bboxVertexShader, bboxFragmentShader) {
     // Cargar modelos desde JSON
@@ -72,6 +93,22 @@ Scene::Scene() : shader(true), crosshairShader(crosshairVertexShader, crosshairF
     // Buffers para Bounding Box
     glGenVertexArrays(1, &bboxVAO);
     glGenBuffers(1, &bboxVBO);
+
+    pickingShader = Shader(pickingVertexShader, pickingFragmentShader);
+    
+    // Inicializar FBO (Resolucion estandar 1024x768 que tienes en tu ventana main)
+    InitPickingFBO(1024, 768);
+
+    // Asignar IDs unicos a los modelos. El ID 0 esta reservado para el vacio (fondo negro)
+    int currentID = 1; 
+    for (auto& model : models) {
+        model.SetPickingID(currentID);
+        currentID++;
+    }
+    for (int i = 0; i < 10; i++) { // Todas las luces posibles (activas o inactivas) necesitan su ID
+        lightSpheres[i].SetPickingID(currentID);
+        currentID++;
+    }
 }
 
 
@@ -280,8 +317,6 @@ void Scene::SaveScene(const std::string& filename) {
     nlohmann::json jsonData;
 
     for (const auto& model : models) {
-        if (model.isRoom) continue;
-
         nlohmann::json modelJson;
         modelJson["name"] = model.name;
         modelJson["position"] = { model.position.x, model.position.y, model.position.z };
@@ -320,7 +355,7 @@ void Scene::LoadScene(const std::string& filename) {
     nlohmann::json jsonData;
     file >> jsonData;
 
-    models.erase(std::remove_if(models.begin(), models.end(), [](const Model& m) { return !m.isRoom; }), models.end());
+    models.clear();
 
     activeLights = 0;
 
@@ -357,6 +392,82 @@ void Scene::LoadScene(const std::string& filename) {
     selectedModel = nullptr;
 }
 
+void Scene::InitPickingFBO(int width, int height) {
+    glGenFramebuffers(1, &pickingFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, pickingFBO);
+
+    // Textura
+    glGenTextures(1, &pickingTexture);
+    glBindTexture(GL_TEXTURE_2D, pickingTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pickingTexture, 0);
+
+    // --- AGREGAR ESTO: Indicar que queremos escribir en el color attachment 0 ---
+    GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0 };
+    glDrawBuffers(1, drawBuffers);
+    // ----------------------------------------------------------------------------
+
+    // Renderbuffer (Profundidad)
+    glGenRenderbuffers(1, &pickingDepth);
+    glBindRenderbuffer(GL_RENDERBUFFER, pickingDepth);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, pickingDepth);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0); 
+}
+
+void Scene::RenderPickingPass(Camera& camera) {
+    // Tomar el control y renderizar hacia nuestra textura invisible
+    glBindFramebuffer(GL_FRAMEBUFFER, pickingFBO);
+    glViewport(0, 0, 1024, 768);
+    
+    // Limpiamos la textura en negro puro (RGB: 0,0,0 -> Equivalente al ID 0)
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
+
+    pickingShader.Use();
+    GLint colorLoc = glGetUniformLocation(pickingShader.GetID(), "pickingColor");
+    if (colorLoc == -1) {
+        std::cerr << "CRÍTICO: El shader 'pickingShader' no tiene el uniform 'pickingColor'. Revisar compilación!" << std::endl;
+    }
+
+
+    // Corregido: Se utiliza un FOV fijo de 45.0f ya que la clase Camera no posee atributo Zoom
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1024.0f / 768.0f, 0.1f, 100.0f);
+    glm::mat4 view = camera.GetViewMatrix();
+    
+    glUniformMatrix4fv(glGetUniformLocation(pickingShader.GetID(), "projection"), 1, GL_FALSE, &projection[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(pickingShader.GetID(), "view"), 1, GL_FALSE, &view[0][0]);
+
+    // Dibujar modelos regulares con su color unico
+    for (auto& model : models) {       
+        glm::mat4 modelMat = glm::mat4(1.0f);
+        modelMat = glm::translate(modelMat, model.position);
+        modelMat *= glm::mat4_cast(model.rotation);
+        modelMat = glm::scale(modelMat, model.scale);
+        
+        glUniformMatrix4fv(glGetUniformLocation(pickingShader.GetID(), "model"), 1, GL_FALSE, &modelMat[0][0]);
+        glUniform3fv(glGetUniformLocation(pickingShader.GetID(), "pickingColor"), 1, &model.pickingColor[0]);
+        model.Draw(pickingShader);
+    }
+
+    // Dibujar luces con su color unico
+    for (int i = 0; i < activeLights; i++) {
+        glm::mat4 modelMat = glm::mat4(1.0f);
+        modelMat = glm::translate(modelMat, lightSpheres[i].position);
+        modelMat *= glm::mat4_cast(lightSpheres[i].rotation);
+        modelMat = glm::scale(modelMat, lightSpheres[i].scale);
+        
+        glUniformMatrix4fv(glGetUniformLocation(pickingShader.GetID(), "model"), 1, GL_FALSE, &modelMat[0][0]);
+        glUniform3fv(glGetUniformLocation(pickingShader.GetID(), "pickingColor"), 1, &lightSpheres[i].pickingColor[0]);
+        lightSpheres[i].Draw(pickingShader);
+    }
+
+    // Devolver el control al sistema para que dibuje la escena normal visual en el bucle principal
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
 
 Scene::~Scene() {
     // Liberar VAO y VBO de la mira

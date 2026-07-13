@@ -74,10 +74,10 @@ int main() {
         bool isSelected = (scene.selectedModel != nullptr);
         if (isSelected && !wasSelected) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            firstMouse = true; // Resetear al entrar a la UI
+            firstMouse = true; 
         } else if (!isSelected && wasSelected) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            firstMouse = true; // Resetear al salir de la UI
+            firstMouse = true;
         }
         wasSelected = isSelected;
 
@@ -148,44 +148,48 @@ void processInput(GLFWwindow* window, float deltaTime) {
   
     static bool prevClickState = false;
     bool isLeftClicked = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+    
     if (isLeftClicked && !prevClickState && !ImGui::GetIO().WantCaptureMouse) {
-        glm::vec3 rayStart = camera.Position;
-        glm::vec3 rayDir = glm::normalize(camera.Front); 
+        scene->RenderPickingPass(camera);
+        glBindFramebuffer(GL_FRAMEBUFFER, scene->pickingFBO);
+        glReadBuffer(GL_COLOR_ATTACHMENT0);
 
-        float closestT = FLT_MAX;
-        Model* closestModel = nullptr;
+        int windowWidth = 1024; 
+        int windowHeight = 768;
+        int xCenter = windowWidth / 2;
+        int yCenter = windowHeight / 2;
+        int yInverted = windowHeight - yCenter;
 
-        for (auto& model : scene->models) {
-            if (model.isRoom) continue;
-            float tNear, tFar;
-            if (scene->RayAABBIntersection(rayStart, rayDir, model, tNear, tFar)) {
-                if (tNear < closestT && tNear >= 0.0f) {
-                    closestT = tNear;
-                    closestModel = &model;
-                }
-            }
-        }
+        unsigned char pixel[3];
+        glReadPixels(xCenter, yInverted, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, pixel); 
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        for (int i = 0; i < scene->activeLights; i++) { 
-            Model& light = scene->lightSpheres[i];
-            float tNear, tFar;
-            if (scene->RayAABBIntersection(rayStart, rayDir, light, tNear, tFar)) {
-                if (tNear < closestT && tNear >= 0.0f) {
-                    closestT = tNear;
-                    closestModel = &light;
-                }
-            }
-        }
-
+        int selectedID = pixel[0] + (pixel[1] * 256) + (pixel[2] * 256 * 256);
         for (auto& model : scene->models) model.isSelected = false;
         for (int i = 0; i < scene->activeLights; i++) scene->lightSpheres[i].isSelected = false;
-        
-        if (closestModel) {
-            closestModel->isSelected = true;
-            scene->selectedModel = closestModel;
-        } else {
-            scene->selectedModel = nullptr;
+        scene->selectedModel = nullptr;
+
+        if (selectedID != 0) { 
+            bool found = false;
+            for (auto& model : scene->models) {
+                if (model.pickingID == selectedID) {
+                    model.isSelected = true;
+                    scene->selectedModel = &model;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                for (int i = 0; i < scene->activeLights; i++) {
+                    if (scene->lightSpheres[i].pickingID == selectedID) {
+                        scene->lightSpheres[i].isSelected = true;
+                        scene->selectedModel = &scene->lightSpheres[i];
+                        break;
+                    }
+                }
+            }
         }
+        
         prevClickState = true;
     }
     else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE) {
@@ -209,8 +213,6 @@ void processInput(GLFWwindow* window, float deltaTime) {
 
             if (change > 0 && scene->activeLights > prevLights) {
                 Model& newLight = scene->lightSpheres[prevLights];
-                
-                // Las luces se clonan a partir de la luz base para mantener la malla generada
                 Model baseLight = scene->lightSpheres[0]; 
                 newLight = baseLight; 
                 
@@ -226,13 +228,6 @@ void processInput(GLFWwindow* window, float deltaTime) {
 
     handleKeyPress(GLFW_KEY_RIGHT, rightPressed, 1); 
     handleKeyPress(GLFW_KEY_LEFT, leftPressed, -1); 
-
-    if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) {
-        scene->SaveScene("scene.json");
-    }
-    if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS) { 
-        scene->LoadScene("scene.json");
-    }
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
@@ -281,7 +276,6 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
             scene->selectedModel->position += delta;
 
             if (!keyXPressed && !keyYPressed && !keyZPressed && !scene->selectedModel->isLight) {
-                // Actualizar rotacion como quaternion
                 glm::quat rotY = glm::angleAxis(glm::radians(xoffset * speed * 50.0f), glm::vec3(0.0f, 1.0f, 0.0f));
                 glm::quat rotX = glm::angleAxis(glm::radians(yoffset * speed * 50.0f), glm::vec3(1.0f, 0.0f, 0.0f)); 
                 scene->selectedModel->rotation = rotY * scene->selectedModel->rotation * rotX;             
