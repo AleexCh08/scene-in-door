@@ -140,14 +140,39 @@ void UIManager::Render(Scene* scene) {
         if (ImGui::CollapsingHeader("Transformaciones", ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::Indent(10.0f); 
             bool transformChanged = false;
-            
-            if (ImGui::DragFloat3("Posicion", &scene->selectedModel->position[0], 0.05f)) transformChanged = true;
+            auto DrawVec3Control = [&](const std::string& label, glm::vec3& values, float speed = 0.05f, float min = 0.0f, float max = 0.0f) -> bool {
+                bool changed = false;
+                ImGui::Text("%s", label.c_str()); 
+                ImGui::SameLine(85.0f); 
+                
+                float width = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemInnerSpacing.x * 2.0f) / 3.0f;
+                float dragWidth = width - ImGui::CalcTextSize("X").x - 4.0f; 
+
+                auto DrawColoredDrag = [&](const char* id, const char* labelStr, ImVec4 color, float& val) {
+                    ImGui::TextColored(color, "%s", labelStr);
+                    ImGui::SameLine(0, 4.0f);
+                    ImGui::PushItemWidth(dragWidth);
+                    if (ImGui::DragFloat(id, &val, speed, min, max, "%.2f")) changed = true;
+                    ImGui::PopItemWidth();
+                };
+
+                DrawColoredDrag((std::string("##X") + label).c_str(), "X", ImVec4(1.0f, 0.3f, 0.3f, 1.0f), values.x);
+                ImGui::SameLine(0, ImGui::GetStyle().ItemInnerSpacing.x);
+                DrawColoredDrag((std::string("##Y") + label).c_str(), "Y", ImVec4(0.3f, 1.0f, 0.3f, 1.0f), values.y);
+                ImGui::SameLine(0, ImGui::GetStyle().ItemInnerSpacing.x);
+                DrawColoredDrag((std::string("##Z") + label).c_str(), "Z", ImVec4(0.3f, 0.6f, 1.0f, 1.0f), values.z);
+                
+                return changed;
+            };
+
+            // Usamos la lambda para cada transformacion
+            if (DrawVec3Control("Posicion", scene->selectedModel->position)) transformChanged = true;
             
             if (!scene->selectedModel->isLight) {
-                if (ImGui::DragFloat3("Escala", &scene->selectedModel->scale[0], 0.05f)) transformChanged = true;
+                if (DrawVec3Control("Escala", scene->selectedModel->scale, 0.05f, 0.01f, 100.0f)) transformChanged = true;
                 
                 glm::vec3 eulerRotation = glm::degrees(glm::eulerAngles(scene->selectedModel->rotation));
-                if (ImGui::DragFloat3("Rotacion", &eulerRotation[0], 1.0f)) {
+                if (DrawVec3Control("Rotacion", eulerRotation, 1.0f)) {
                     scene->selectedModel->rotation = glm::quat(glm::radians(eulerRotation));
                     transformChanged = true;
                 }
