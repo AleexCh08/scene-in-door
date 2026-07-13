@@ -31,6 +31,8 @@ if(WIN32)
         kernel32
         shell32
         assimp
+        comdlg32
+        ole32
     )
 else()
     target_link_libraries(${PROJECT_NAME} PRIVATE ${GLFW_LIB} GL dl assimp)

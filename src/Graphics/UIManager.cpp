@@ -2,6 +2,7 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+#include "../Utils/tinyfiledialogs.h"
 
 void UIManager::Init(GLFWwindow* window) {
     IMGUI_CHECKVERSION();
@@ -182,24 +183,34 @@ void UIManager::Render(Scene* scene) {
         
         if (ImGui::Button("Guardar Escena", buttonSize)) {
             if (scene) {
-                scene->SaveScene("scene.json");
-                ShowNotification("Escena guardada exitosamente");
+                const char* filterPatterns[1] = { "*.json" };
+                const char* filepath = tinyfd_saveFileDialog("Guardar Escena", "scene.json", 1, filterPatterns, "Archivos JSON");
+                
+                if (filepath) { 
+                    scene->SaveScene(filepath);
+                    ShowNotification("Escena guardada exitosamente");
+                }
             }
         }
         ImGui::Spacing();
         
         if (ImGui::Button("Cargar Escena", buttonSize)) {
             if (scene) {
-                scene->selectedModel = nullptr; 
+                const char* filterPatterns[1] = { "*.json" };
+                const char* filepath = tinyfd_openFileDialog("Cargar Escena", "", 1, filterPatterns, "Archivos JSON", 0);
                 
-                scene->LoadScene("scene.json");
-                ShowNotification("Escena cargada exitosamente");
+                if (filepath) {
+                    scene->selectedModel = nullptr; 
+                    
+                    scene->LoadScene(filepath);
+                    ShowNotification("Escena cargada exitosamente");
 
-                ImGui::End();
-                ImGui::PopStyleVar();
-                ImGui::Render();
-                ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-                return;
+                    ImGui::End();
+                    ImGui::PopStyleVar();
+                    ImGui::Render();
+                    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+                    return;
+                }
             }
         }
         
