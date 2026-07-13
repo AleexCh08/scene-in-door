@@ -240,7 +240,7 @@ void UIManager::Render(Scene* scene) {
     if (ImGui::Button("Importar Modelo 3D", buttonSize)) {
         if (scene) {
             const char* filterPatterns[1] = { "*.obj" };
-            const char* filepath = tinyfd_openFileDialog("Importar Modelo 3D", NULL, 2, filterPatterns, "Modelos 3D", 0);
+            const char* filepath = tinyfd_openFileDialog("Importar Modelo 3D", "", 1, filterPatterns, "Modelos 3D", 0);
             
             if (filepath) {
                     int maxID = 10;

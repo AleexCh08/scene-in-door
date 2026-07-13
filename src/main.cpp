@@ -139,7 +139,7 @@ void processInput(GLFWwindow* window, float deltaTime) {
                          
     if (isCtrlPressed && glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS && !keyCtrlOPressed) {
         const char* filterPatterns[1] = { "*.obj" };
-        const char* filepath = tinyfd_openFileDialog("Importar Modelo 3D", "", 2, filterPatterns, "Modelos 3D", 0);
+        const char* filepath = tinyfd_openFileDialog("Importar Modelo 3D", "", 1, filterPatterns, "Modelos 3D", 0);
         
         if (filepath) {
             int maxID = 10;
@@ -266,10 +266,12 @@ void processInput(GLFWwindow* window, float deltaTime) {
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
-    if (ImGui::GetIO().WantCaptureMouse) {
-        lastX = xpos;
-        lastY = ypos;
-        return;
+    if (glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL) {
+        if (ImGui::GetIO().WantCaptureMouse) {
+            lastX = xpos;
+            lastY = ypos;
+            return;
+        }
     }
 
     if (firstMouse) {
