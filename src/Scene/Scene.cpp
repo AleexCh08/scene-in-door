@@ -29,25 +29,6 @@ const char* pickingFragmentShader = R"(
 
 Scene::Scene() : shader(true), crosshairShader(crosshairVertexShader, crosshairFragmentShader), 
                     bboxShader(bboxVertexShader, bboxFragmentShader) {
-    // Cargar modelos desde JSON
-    std::ifstream file("objects.json");
-    if (!file.is_open()) {
-        std::cerr << "Error al abrir objects.json" << std::endl;
-        return;
-    }
-
-    nlohmann::json jsonData;
-    file >> jsonData;
-
-    for (const auto& modelData : jsonData["models"]) {
-        Model model(modelData["name"].get<std::string>());
-        model.position = glm::vec3(
-            modelData["position"][0].get<float>(),
-            modelData["position"][1].get<float>(),
-            modelData["position"][2].get<float>()
-        );
-        models.push_back(model);
-    }
 
     // Crear skybox
     std::vector<std::string> faces = {
@@ -388,6 +369,15 @@ void Scene::LoadScene(const std::string& filename) {
             model.isLight = false;
             models.push_back(model);
         }
+    }
+    int currentID = 1; 
+    for (auto& model : models) {
+        model.SetPickingID(currentID);
+        currentID++;
+    }
+    for (int i = 0; i < 10; i++) { 
+        lightSpheres[i].SetPickingID(currentID);
+        currentID++;
     }
     selectedModel = nullptr;
 }

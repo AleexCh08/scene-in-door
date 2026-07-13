@@ -40,16 +40,8 @@ endif()
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_SOURCE_DIR}/objects
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/objects
-
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_SOURCE_DIR}/src/Textures
         $<TARGET_FILE_DIR:${PROJECT_NAME}>/src/Textures
     
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/objects.json
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/objects.json
-
-    COMMENT "Copiando carpeta objects, texturas y archivos JSON al directorio del ejecutable..."
+    COMMENT "Copiando carpeta Texturas al directorio del ejecutable..."
 )

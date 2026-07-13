@@ -180,6 +180,29 @@ void UIManager::Render(Scene* scene) {
         
         // Asignamos un tamaño fijo a los botones (Ancho, Alto) para forzar el tamaño de la ventana
         ImVec2 buttonSize(160, 35);
+
+        if (ImGui::Button("Importar Modelo 3D", buttonSize)) {
+            if (scene) {
+                const char* filterPatterns[2] = { "*.obj" };
+                const char* filepath = tinyfd_openFileDialog("Importar Modelo 3D", "", 2, filterPatterns, "Modelos 3D", 0);
+                
+                if (filepath) {
+                    Model newModel(filepath);                 
+                    // Calcular el siguiente ID disponible para el Color Picking
+                    int maxID = 10; // Las luces ocupan del 1 al 10
+                    for (const auto& m : scene->models) {
+                        if (m.pickingID > maxID) maxID = m.pickingID;
+                    }
+                    newModel.SetPickingID(maxID + 1);
+                    
+                    scene->models.push_back(newModel);
+                    ShowNotification("Modelo importado exitosamente");
+                }
+            }
+        }
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
         
         if (ImGui::Button("Guardar Escena", buttonSize)) {
             if (scene) {
