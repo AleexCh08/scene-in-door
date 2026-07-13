@@ -71,14 +71,67 @@ void UIManager::Render(Scene* scene) {
         }
         ImGui::Spacing();
 
-        // Boton con tamaño ajustado a su etiqueta
-        if (ImGui::Button(" Deseleccionar ")) {
-            scene->selectedModel = nullptr;
-            ImGui::End();
+        if (scene->selectedModel->isLight) {
+            ImVec2 deseleccionarSize(160, 35);
+            ImGui::SetCursorPosX((ImGui::GetWindowSize().x - deseleccionarSize.x) * 0.5f);
             
-            ImGui::Render();
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-            return; 
+            if (ImGui::Button("Deseleccionar", deseleccionarSize)) {
+                scene->selectedModel = nullptr;
+                ImGui::End();
+                
+                ImGui::Render();
+                ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+                return; 
+            }
+        } 
+        // Si es un modelo, mostramos Deseleccionar y Eliminar lado a lado
+        else {
+            // Hacemos los botones un poco más pequeños (120) para que quepan cómodamente
+            ImVec2 buttonSize(120, 35); 
+            float spacing = ImGui::GetStyle().ItemSpacing.x;
+            
+            // El ancho total del grupo es: anchoBoton * 2 + espacioEntreBotones
+            ImGui::SetCursorPosX((ImGui::GetWindowSize().x - (buttonSize.x * 2 + spacing)) * 0.5f);
+            
+            if (ImGui::Button("Deseleccionar", buttonSize)) {
+                scene->selectedModel = nullptr;
+                ImGui::End();
+                
+                ImGui::Render();
+                ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+                return; 
+            }
+            
+            ImGui::SameLine();
+            
+            // Boton Eliminar con los mismos tonos rojos que el boton de Salir
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.2f, 0.2f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.3f, 0.3f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.9f, 0.4f, 0.4f, 1.0f));
+            
+            if (ImGui::Button("Eliminar", buttonSize)) {
+                int targetID = scene->selectedModel->pickingID;
+                
+                // Buscar el modelo por su ID único en el vector y borrarlo
+                for (auto it = scene->models.begin(); it != scene->models.end(); ++it) {
+                    if (it->pickingID == targetID) {
+                        scene->models.erase(it);
+                        break;
+                    }
+                }
+                
+                // Limpiar la seleccion para que no apunte a un bloque de memoria destruido
+                scene->selectedModel = nullptr;
+                
+                ImGui::PopStyleColor(3);
+                ImGui::End();
+                
+                ImGui::Render();
+                ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+                return; 
+            }
+            
+            ImGui::PopStyleColor(3);
         }
         
         ImGui::Separator();
@@ -179,7 +232,7 @@ void UIManager::Render(Scene* scene) {
     
     // Aumentamos el margen interno para que no se vea aplastada
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15.0f, 15.0f));
-    ImGui::Begin("Menu Global", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
+    ImGui::Begin("Menu Global (P)", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
     
     // Asignamos un tamaño fijo a los botones (Ancho, Alto) para forzar el tamaño de la ventana
     ImVec2 buttonSize(160, 35);
