@@ -51,9 +51,5 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         ${CMAKE_SOURCE_DIR}/objects.json
         $<TARGET_FILE_DIR:${PROJECT_NAME}>/objects.json
 
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/scene.json
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/scene.json
-
     COMMENT "Copiando carpeta objects, texturas y archivos JSON al directorio del ejecutable..."
 )
